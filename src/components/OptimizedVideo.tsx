@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState, memo } from "react";
+import React, { useEffect, useRef, memo } from "react";
 
 interface OptimizedVideoProps extends React.VideoHTMLAttributes<HTMLVideoElement> {
   src: string;
@@ -9,45 +9,36 @@ interface OptimizedVideoProps extends React.VideoHTMLAttributes<HTMLVideoElement
 
 function OptimizedVideoComponent({ src, className, ...props }: OptimizedVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isIntersecting, setIntersecting] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIntersecting(entry.isIntersecting);
-      },
-      {
-        rootMargin: "200px 0px", // Preload slightly before it comes into view
-        threshold: 0,
-      }
-    );
-
-    if (videoRef.current) {
-      observer.observe(videoRef.current);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isIntersecting) {
-      // Use a play promise to avoid DOMException on rapid play/pause
-      const playPromise = video.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => {
-          // Auto-play was prevented or interrupted, this is normal in some browsers
-          console.debug("Video play interrupted:", error);
-        });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) => {
+              console.debug("Video play interrupted:", error);
+            });
+          }
+        } else {
+          video.pause();
+        }
+      },
+      {
+        rootMargin: "200px 0px",
+        threshold: 0,
       }
-    } else {
-      video.pause();
-    }
-  }, [isIntersecting, src]);
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Support for WebM fallback if passing an .mp4
   const isMp4 = typeof src === "string" && src.endsWith(".mp4");

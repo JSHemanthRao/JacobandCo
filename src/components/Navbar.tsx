@@ -2,7 +2,7 @@
 
 import TransitionLink from "@/components/TransitionLink";
 import Magnetic from "@/components/Magnetic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Menu, Search, X } from "lucide-react";
 
 const links = [
@@ -13,14 +13,23 @@ const links = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let frame = 0;
 
     const update = () => {
       frame = 0;
-      setIsScrolled(window.scrollY > 72);
+      if (!headerRef.current) return;
+      
+      const scrolled = window.scrollY > 72;
+      if (scrolled) {
+        headerRef.current.classList.add("border-[#D4AF37]/15", "bg-black/75", "backdrop-blur-xl");
+        headerRef.current.classList.remove("border-transparent", "bg-black/0", "backdrop-blur-0");
+      } else {
+        headerRef.current.classList.remove("border-[#D4AF37]/15", "bg-black/75", "backdrop-blur-xl");
+        headerRef.current.classList.add("border-transparent", "bg-black/0", "backdrop-blur-0");
+      }
     };
 
     const onScroll = () => {
@@ -41,11 +50,8 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed left-0 right-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500 ${
-        isScrolled
-          ? "border-[#D4AF37]/15 bg-black/75 backdrop-blur-xl"
-          : "border-transparent bg-black/0 backdrop-blur-0"
-      }`}
+      ref={headerRef}
+      className="fixed left-0 right-0 top-0 z-50 border-b transition-[background-color,border-color,backdrop-filter] duration-500 border-transparent bg-black/0 backdrop-blur-0"
     >
       <div className="container mx-auto flex h-24 items-center justify-between px-6">
         <Magnetic intensity={0.1}>
